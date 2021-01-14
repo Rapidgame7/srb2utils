@@ -1,0 +1,114 @@
+/*rawset(_G, "draw3d", function(x, y, depth, scale, patch, flags, colormap)
+	table.insert(toBundle, {x=x, y=y, depth=depth, scale=scale, patch=patch, flags=flags, colormap=colormap})
+end)*/
+//DebugRegisterChannel("3d")
+// actually i don't need this one
+
+// i crave death
+
+//rawset(_G, "bundle3d", function(v, set)
+local function bundle3d(set)
+	return {
+		x=set[1],
+		y=set[2],
+		depth=set[3],
+		scale=set[4],
+		patch=set[5],
+		flags=set[6],
+		colormap=set[7]
+	}
+end
+
+local function FixedPowInt(a,b)
+	// Yeah fuck you decimals
+	if FixedTrunc(b) ~= b then error("Leave the premises") end
+	
+end
+
+rawset(_G, "draw3d", function(v, toBundle, cutoff)
+	// Take a set of items to draw in 3D form
+	
+	// v is a drawer
+	// toBundle is a table containing subtables in the format:
+	// x, y, depth, scale, patch, flags, colormap
+	
+	//table.insert(toBundle, {x=x, y=y, depth=depth, scale=scale, patch=patch, flags=flags, colormap=colormap})
+	
+	// Scale is controlled by two variables
+	// DEPTH and SCALE
+	// SCALE acts as it should
+	// DEPTH is a scale modifier to simulate 3D
+	// DEPTH will also set what draws on top of what
+	local drawInd = {}
+	
+	for i = 1,#toBundle do
+		local itm = bundle3d(toBundle[i])
+		
+		local edepth = itm.depth / 24
+		if edepth == 0 then edepth = 1 end
+		
+		--local drawdepth = FRACUNIT - FixedDiv(FRACUNIT*16, edepth)
+		--local drawdepth = FRACUNIT + (FixedDiv(FRACUNIT, edepth))
+		local drawdepth = FixedMul(FRACUNIT + edepth, itm.scale)
+		
+		// (3/( (x+1)/2 )) + 4
+		
+		//local drawdepth = (FixedDiv(3*FRACUNIT, FixedDiv(edepth+FRACUNIT, 2*FRACUNIT)) + 4*FRACUNIT)
+		
+		
+		
+		// A depth of FRACUNIT should be normal?
+		// Or maybe if depth is 0?
+		
+		// Normalize
+		
+		local rawdrawdepth = drawdepth
+		
+		if drawdepth < 1 then drawdepth = 1 end
+		if drawdepth > 4*FRACUNIT then drawdepth = 4*FRACUNIT end
+		
+		local bundle = {
+			// Scale is the inital scale set
+			// Depth is the initial depth set (z)
+			// Drawdepth should be a product of Scale and Depth
+			scale = itm.scale,
+			depth = itm.depth,
+			
+			drawdepth = drawdepth,
+			rawdrawdepth = rawdrawdepth, // Raw depth for reference
+			
+			x = itm.x,
+			y = itm.y,
+			patch = itm.patch,
+			flags = itm.flags or 0,
+			colormap = itm.colormap
+		}
+		table.insert(drawInd, bundle)
+		
+	end
+	
+	
+	table.sort(drawInd, function(a,b) return a.depth < b.depth end)
+	
+	for i = 1,#drawInd do
+		local vl = drawInd[i]
+		
+		if cutoff and vl.x > 320*FRACUNIT or vl.y > 200*FRACUNIT or vl.x < 0 or vl.y < 0 then continue end
+		v.drawScaled(vl.x, vl.y, vl.drawdepth, vl.patch, vl.flags, vl.colormap)
+		//v.drawString(vl.x, vl.y, vl.rawdrawdepth, 0, "fixed")
+	end
+	
+	//print("ok! drawing "..#drawInd.." things")
+end)
+
+/*
+usage:
+you just need to feed a drawer and a table of tables
+whose tables have values in the format of bundle3d()
+to draw3d()
+and you're set
+
+the hardest part would be doing the 3d calculations though
+
+you generally don't have to use more than 1 draw3d drawer
+*/

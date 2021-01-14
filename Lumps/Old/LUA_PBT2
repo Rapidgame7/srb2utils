@@ -1,0 +1,91 @@
+rawset(_G, "pbtDaemon", function(p)
+	if deepcopy == nil then error("deepcopy missing", 2) end
+	// Does a cool thing
+	local cmdbt = p.cmd.buttons
+	local cmdfm = p.cmd.forwardmove
+	local cmdsm = p.cmd.sidemove
+	
+	if not p.bttimestamp then p.bttimestamp = leveltime-1 end
+	
+	if p.bttimestamp ~= leveltime then
+		// Prevent this from running more than once if multiple daemons are in place
+		if not p.bt then
+			p.bt = {
+				up = 0,
+				down = 0,
+				left = 0,
+				right = 0,
+				spin = 0,
+				jump = 0,
+				attack = 0,
+				nextwep = 0,
+				prevwep = 0,
+				custom1 = 0,
+				custom2 = 0,
+				custom3 = 0,
+				
+				dirAsAngle = 0,
+				moving = 0
+			}
+			p.btrel = deepcopy(p.bt)
+		end
+		local sens = 20
+		
+		
+		p.bt.up = cmdfm > sens and $+1 or 0
+		p.bt.down = cmdfm < -sens and $+1 or 0
+		p.bt.right = cmdsm > sens and $+1 or 0
+		p.bt.left = cmdsm < -sens and $+1 or 0
+		
+		if p.bt.up > 0 and p.bt.down > 0 then p.bt.up = 0; p.bt.down = 0 end
+		if p.bt.right > 0 and p.bt.left > 0 then p.bt.right = 0; p.bt.left = 0 end
+		
+		p.bt.hmoving = (p.bt.left or p.bt.right) and $+1 or 0
+		p.bt.vmoving = (p.bt.up or p.bt.down) and $+1 or 0
+		p.bt.moving = (p.bt.up or p.bt.down or p.bt.left or p.bt.right) and $+1 or 0
+		
+		p.bt.spin = (cmdbt & BT_USE) > 0 and $+1 or 0
+		p.bt.jump = (cmdbt & BT_JUMP) > 0 and $+1 or 0
+		p.bt.attack = (cmdbt & BT_ATTACK) > 0 and $+1 or 0
+		
+		p.bt.nextwep = (cmdbt & BT_WEAPONNEXT) > 0 and $+1 or 0
+		p.bt.prevwep = (cmdbt & BT_WEAPONPREV) > 0 and $+1 or 0
+		
+		p.bt.custom1 = (cmdbt & BT_CUSTOM1) > 0 and $+1 or 0
+		p.bt.custom2 = (cmdbt & BT_CUSTOM2) > 0 and $+1 or 0
+		p.bt.custom3 = (cmdbt & BT_CUSTOM3) > 0 and $+1 or 0
+		
+		
+		
+		p.btrel.up = p.bt.up == 0 and $+1 or 0
+		p.btrel.down = p.bt.down == 0 and $+1 or 0
+		p.btrel.right = p.bt.right == 0 and $+1 or 0
+		p.btrel.left = p.bt.left == 0 and $+1 or 0
+		
+		p.btrel.spin = p.bt.spin == 0 and $+1 or 0
+		p.btrel.jump = p.bt.jump == 0 and $+1 or 0
+		p.btrel.attack = p.bt.attack == 0 and $+1 or 0
+		
+		p.btrel.nextwep = p.bt.nextwep == 0 and $+1 or 0
+		p.btrel.prevwep = p.bt.prevwep == 0 and $+1 or 0
+		
+		p.btrel.custom1 = p.bt.custom1 == 0 and $+1 or 0
+		p.btrel.custom2 = p.bt.custom2 == 0 and $+1 or 0
+		p.btrel.custom3 = p.bt.custom3 == 0 and $+1 or 0
+		
+		local sum = 0
+		local sidesum = 0
+		
+		if cmdsm < 0 then sidesum = 45 end
+		if cmdsm > 0 then sidesum = -45 end
+		
+		if cmdfm == 0 then sidesum = $*2 end
+		if cmdfm < 0 then sidesum = -sidesum;sum = 180 end
+		
+		local res = sum + sidesum
+		--return FixedAngle( res*FRACUNIT )
+		p.bt.dirAsAngle = FixedAngle( res*FRACUNIT )
+		
+		p.bttimestamp = leveltime
+	end
+end)

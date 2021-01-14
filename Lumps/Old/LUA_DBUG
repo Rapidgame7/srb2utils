@@ -1,0 +1,86 @@
+// > Debug <
+// Utility functions for printing debug shit
+// So I can individually check that each part of the script is working in harmony
+// without having to comment out print instructions
+// fuck that
+
+local channels = {}
+
+local function RegisterChannel(channel)
+	if type(channel) ~= "string" then error("Argument #1 expected string, got "..type(channel),2) end
+	if channel:find(" ") ~= nil then error("Channel may not contain spaces",2) end
+	if channels[channel] == nil then
+		channels[channel] = 0
+		print("Channel "..channel.." registered.")
+		return
+	else
+		print("Channel "..channel.." already registered.")
+		return
+	end
+end
+
+local function DebugPrint(channel, txt)
+	if type(channel) ~= "string" then error("Argument #1 expected string, got "..type(channel),2) end
+	if channel:find(" ") ~= nil then error("Channel may not contain spaces",2) end
+	if channels[channel] == nil then
+		print("WARNING: Channel "..channel.." is not registered! Autoregistering...")
+		channels[channel] = 0
+	end
+	if channels[channel] then
+		local rtxt
+		local tt = type(txt)
+		if tt ~= "string" and tt ~= "number" then
+			if tt == "boolean" then
+				if txt == true then rtxt = "bool-true"
+				else rtxt = "bool-false" end
+			else
+				rtxt = tt
+			end
+		else
+			rtxt = txt
+		end
+		print("\130<"..channel.."> \128"..txt)
+	end
+end
+
+COM_AddCommand("debug", function(p, ...)
+	local args = {...}
+	if #args == 0 then
+		CONS_Printf(p, "debug <channel>")
+		CONS_Printf(p, "Toggles debug information from a specified channel.")
+		CONS_Printf(p, "Available channels:")
+		local list = {}
+		for k,v in pairs(channels) do
+			list[#list+1] = k
+		end
+		table.sort(list)
+		for k,v in ipairs(list) do
+			local ison = channels[v] == true
+			local chk =        "\x86[ ] "
+			if ison then chk = "\x82[x] " end
+			print(chk..v)
+		end
+		return
+	end
+	if #args == 1 then
+		local c = args[1]
+		if channels[c] == nil then
+			CONS_Printf(p, "Channel unavailable.")
+		else
+			channels[c] = not $
+			CONS_Printf(p, "Channel toggled.")
+		end
+	end
+end, 0)
+
+/*
+RegisterChannel("TestPrint")
+COM_AddCommand("bld_debugtest", function(p)
+	DebugPrint("TestPrint", "Called a debug print on channel TestPrint.")
+end, 0)
+*/
+
+rawset(_G, "DebugPrint", DebugPrint)
+rawset(_G, "DebugRegisterChannel", RegisterChannel)
+
+//RegisterChannel("UFClampCalls")

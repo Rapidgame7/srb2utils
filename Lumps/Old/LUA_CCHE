@@ -1,0 +1,57 @@
+// CACHE
+local pov
+local cached = {}
+
+rawset(_G, "CacheSetPOV", function(v)
+	pov = v
+end)
+
+rawset(_G, "Cache", function(ps)
+	// Saves string to cache table then displays it if it exists
+	local v = pov
+	if not cached[ps] then
+		if not v.patchExists(ps) then print("Tried to cache inexistent patch \""..ps.."\".") end
+		cached[ps] = v.cachePatch(ps)
+	end
+	return cached[ps]
+end)
+
+rawset(_G, "ClearCache", function()
+	cached = {}
+end)
+
+
+
+
+
+local function sprParse(v,frame,rot)
+	local s = sprnames[v]
+	local f = R_Frame2Char(frame)
+	local r = tostring(rot)
+	if s ~= nil then
+		return s..f..r
+	end
+	
+	print("Bad sprite")
+	return "UNKNA0"
+end
+rawset(_G, "CacheBruh", function(m)
+	// Exclusive for minimap
+	local v = pov
+	local epic = getmmepic()
+	local ix = epic[m.type]
+	if ix == nil then return nil end
+	local ov = ix[1]
+	local sc = ix[2]
+	local res
+	if type(ov) == "nil" then
+		res = sprParse(m.sprite,m.frame,0)
+	elseif type(ov) == "number" then
+		res = sprParse(m.sprite,m.frame,ov)
+	elseif type(ov) == "string" then
+		res = ov
+	else
+		error("cringe", 2)
+	end
+	return Cache(res),sc,ix
+end)

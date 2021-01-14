@@ -1,0 +1,4 @@
+bitshift 29 for multiples of angle_45
+1 << 29 = angle_45
+
+ye

@@ -1,0 +1,40 @@
+local function explode(str)
+	local tb = {}
+	local quoted = false
+	for word in string.gmatch(str, "[%S]+") do
+		if quoted == false then
+			table.insert(tb, word)
+		else
+			tb[#tb] = tb[#tb].." "..word
+		end
+		
+		if word:sub(1,1) == "\"" then quoted = true end
+		if word:sub(-1,-1) == "\"" then quoted = false end
+	end
+	return tb
+end
+rawset(_G, "explodeString", explode)
+
+local function makeDict(dict)
+	local meta = {__call = function(tt, a)
+		for k,v in ipairs(tt) do
+			if a == v then return true /*tt[1]*/ end
+		end
+		return false
+	end}
+	
+	for k,v in pairs(dict) do
+		setmetatable(v, meta)
+	end
+	
+end
+rawset(_G, "makeDict", makeDict)// woah
+
+local dict = {
+	help = {"-h", "-help", "-?"},
+	notitle = {"-nt", "-not", "-notitle"},
+	nozone = {"-nz", "-noz", "-nozone"},
+	subtitle = {"-s", "-sub", "-subtitle"},
+	gametype = {"-g", "-gt", "-gametype", "-gm", "-gamemode"}
+}
+makeDict(dict)

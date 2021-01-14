@@ -1,0 +1,90 @@
+freeslot("MT_CAMBOI")
+mobjinfo[MT_CAMBOI] = {
+	flags = MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT
+} + genericObjectDesc
+
+addHook("MobjThinker", function(m)
+	if m and m.valid then
+		if not m.init then
+			m.init = true
+		end
+		if not m.hookedTo or not m.hookedTo.valid or not m.hookedTo.player or not m.hookedTo.player.valid then
+			P_RemoveMobj(m)
+			return
+		end
+		
+	end
+end, MT_CAMBOI)
+
+local CAM_META = {
+	__index = {
+		x = 0,
+		y = 0,
+		z = 0,
+		posrel = true,
+		angle = 0,
+		angrel = true,
+	}
+}
+
+rawset(_G, "CAM_Valid", function(p)
+	// Returns whether the player has a CAMBOI object attached
+	return p.camboi and p.camboi.valid
+end)
+
+rawset(_G, "CAM_Make", function(p, fus)
+	// Creates a "permanent" camera object for the player
+	if isPlyPlaying(p) and not CAM_Valid(p) then
+		local m = p.mo
+		p.camboi = P_SpawnMobj(m.x, m.y, m.z, MT_CAMBOI)
+		p.camboi.hookedTo = p.mo
+	end
+end)
+rawset(_G, "CAM_Kill", function(p)
+	// Kills player's CAMBOI
+	if CAM_Valid(p) then P_RemoveMobj(p.camboi) end
+end)
+
+rawset(_G, "CAM_Position", function(p, t)
+	// Moves the camera around - Takes a table
+	// x, y, z,
+	// posrel - whether these coordinates are relative to the player
+	// angle - where to aim
+	// angrel - relative to player?
+	if not t then t = {} end
+	if CAM_Valid(p) then
+		setmetatable(t, CAM_META)
+		p.camboiset = t
+	end
+end)
+
+addHook("ThinkFrame", function()
+	for p in players.iterate do
+		local validcamboi = p.camboi and p.camboi.valid
+		if validcamboi then
+			p.awayviewmobj = p.camboi
+			p.awayviewtics = 2
+			//p.awayviewaiming = 0
+			if not p.camboiset then
+				//p.camboiset = {x=0,y=0,z=0,angle=0,posrel=true,angrel=true}
+				CAM_Position(p, nil)
+			end
+			if isPlyPlaying(p) then
+				local m = p.mo
+				local c = p.camboi
+				local t = p.camboiset
+				local x,y,z = t.x,t.y,t.z
+				if t.posrel then x,y,z=$1+m.x,$2+m.y,$3+m.z end
+				
+				P_TeleportMove(c,x,y,z)
+				local a = t.angle
+				if t.angrel then a = $+m.angle end
+				c.angle = a
+			end
+		elseif not validcamboi and p.hadcamboi then
+			p.awayviewmobj = nil
+			p.awayviewtics = 0
+		end
+		p.hadcamboi = validcamboi
+	end
+end)
