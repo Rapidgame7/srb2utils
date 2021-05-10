@@ -1,7 +1,12 @@
+-- &
+-- PBT 3.1
+
+-- BT_WEAPONMASK = 0x0f
 local thosbutons = {
 	"up","down","left","right",
 	"spin","jump",
-	"attack","nextwep","prevwep",
+	"fire","fire2","nextwep","prevwep",
+	"camleft","camright","tossflag",
 	"custom1","custom2","custom3",
 	"moving","hmoving","vmoving"
 }
@@ -23,12 +28,12 @@ rawset(_G, "pbtDaemon", function(p)
 		
 		if not p.bt then
 			p.bt = {}
-			p.btx = {}
 			p.btprev = {}
+			p.btrel = {}
 			for _,v in ipairs(thosbutons) do
 				p.bt[v] = 0
 				p.btprev[v] = 0
-				p.btx[v] = 0
+				p.btrel[v] = 0
 			end
 		end
 		local sens = 20
@@ -48,14 +53,24 @@ rawset(_G, "pbtDaemon", function(p)
 		
 		p.bt.spin = (cmdbt & BT_USE) > 0 and $+1 or 0
 		p.bt.jump = (cmdbt & BT_JUMP) > 0 and $+1 or 0
-		p.bt.attack = (cmdbt & BT_ATTACK) > 0 and $+1 or 0
 		
+		p.bt.fire = (cmdbt & BT_ATTACK) > 0 and $+1 or 0
+		p.bt.fire2 = (cmdbt & BT_FIRENORMAL) > 0 and $+1 or 0
 		p.bt.nextwep = (cmdbt & BT_WEAPONNEXT) > 0 and $+1 or 0
 		p.bt.prevwep = (cmdbt & BT_WEAPONPREV) > 0 and $+1 or 0
+		p.bt.tossflag = (cmdbt & BT_TOSSFLAG) > 0 and $+1 or 0
+		
+		p.bt.camleft = (cmdbt & BT_CAMLEFT) > 0 and $+1 or 0
+		p.bt.camright = (cmdbt & BT_CAMRIGHT) > 0 and $+1 or 0
 		
 		p.bt.custom1 = (cmdbt & BT_CUSTOM1) > 0 and $+1 or 0
 		p.bt.custom2 = (cmdbt & BT_CUSTOM2) > 0 and $+1 or 0
 		p.bt.custom3 = (cmdbt & BT_CUSTOM3) > 0 and $+1 or 0
+		
+		for i = 1,#thosbutons do
+			local ix = thosbutons[i]
+			p.btrel[ix] = p.bt[ix] > 0 and $+1 or 0
+		end
 		
 		p.bt.hmoving = (p.bt.left or p.bt.right) and $~=nil and $+1 or 0
 		p.bt.vmoving = (p.bt.up or p.bt.down) and $~=nil and $+1 or 0
@@ -79,7 +94,7 @@ rawset(_G, "pbtDaemon", function(p)
 end)
 
 /*
-pbt usage:
+&pbt usage:
 
 p.bt holds button held time
 p.btprev holds the value in the previous frame for that respective button
