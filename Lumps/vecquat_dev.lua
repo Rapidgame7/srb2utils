@@ -1,10 +1,28 @@
--- naive (and incomplete) implementation of vector3 and quaternions tailored for srb2
+-- dev
+
+-- naive (and incomplete) implementation of vector3 and quaternions tailored for srb2 (or fixedpoint)
 -- some of it borrowed from bjornbytes/maf.lua and modified for & my purposes &
 -- kind of, at least, because after all of this i still have no idea how well this works. yay!
 
 /*
+Thanks to:
 
+- Lach, for testing it with a mod
+- kays, for vec3:angle maf
+- me, for putting up with this shit
+- a number of members in the os for finding resources for this kind of stuff
+- several pages i've read, to name a few:
+http://www.3dkingdoms.com/weekly/weekly.php?a=2 says:
+http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/transforms/index.htm
+https://gist.github.com/ColonelThirtyTwo/1735522
+https://github.com/MartinWeigel/Quaternion/blob/master/Quaternion.c (not really)
+https://stackoverflow.com/questions/4870393/rotating-coordinate-system-via-a-quaternion
 */
+
+local myver = 1 -- Increment this after every version
+
+if VECQUAT ~= nil and VECQUAT >= myver then return end -- Do not load if this (or a better version) is already loaded.
+rawset(_G, "VECQUAT", myver)
 
 local vtmp1
 local vtmp2
@@ -567,10 +585,11 @@ quat = { -- ay, if it helps, "q" often refers to this quaternion, and "o" to "Ot
 		-- @param vec3 normal The axis the rotation will be done around.
 		-- @param angle_t angle The "how much".
 		-- @return an epic quaternion!
-		rotate_test = function(base, normal, angle)
-			local q = fromAxisAngle(normal, angle)
+		rotate = function(base, normal, angle)
+			local q = quat.fromAxisAngle(normal, angle)
 			q:mul(base)
 			q:normalize()
+			base:set(q)
 			return q
 		end,
 		
