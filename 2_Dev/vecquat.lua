@@ -3,6 +3,7 @@
 -- naive (and incomplete) implementation of vector3 and quaternions tailored for srb2 (or fixedpoint)
 -- some of it borrowed from bjornbytes/maf.lua and modified for & my purposes &
 -- kind of, at least, because after all of this i still have no idea how well this works. yay!
+-- warning: coarse language ahead
 
 /*
 Thanks to:
