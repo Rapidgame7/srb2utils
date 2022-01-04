@@ -7,6 +7,7 @@ do return end -- just in case
 -- ########################################## --
 -- Previously known as FontShit.lua,
 -- but rewritten to be less annoying!
+-- Updated to 0.0.1
 
 /* Mini cheatsheet for common glyphs:
 
@@ -286,22 +287,11 @@ FNT_Write(v, {x=100*FRACUNIT, y=50*FRACUNIT, text="Rainbow text!", font=FONT_CON
 
 
 
--- ################################ --
--- v:write(table drawdata)
-
-/* Same as FNT_Write, but made accessible.
-
-Did you know Lua allows you to omit parentheses in some cases?
-*/
-
--- Example:
-v:write({50*FRACUNIT, 50*FRACUNIT, FONT_CONSOLE, "HELLO!"})
-
-v:write{50*FRACUNIT, 50*FRACUNIT, FONT_CONSOLE, "HELLO!"}
-
--- TODO: v:write this one better
 
 
+-- okay that's it
+
+-- trailing newlines
 
 
 
