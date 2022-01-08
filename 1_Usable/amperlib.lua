@@ -304,3 +304,20 @@ function string.explode(str)
 	return tb
 end
 --end)
+
+rawset(_G, "makeconst", function(val, ...)
+	for i = 1, select('#', ...) do
+		local str = select(i, ...)
+		if type(str) ~= "string" then error("Argument "..(i+1).." is not a string",2) end
+		rawset(_G, str, val)
+	end
+end)
+rawset(_G, "ifNilUseNext", function(...)
+	for i = 1, select('#', ...) do
+		local v = select(i, ...)
+		if v ~= nil then return v end
+	end
+end)
+rawset(_G, "fetchFromG", function(what) -- for pcall
+	return _G[what]
+end)
