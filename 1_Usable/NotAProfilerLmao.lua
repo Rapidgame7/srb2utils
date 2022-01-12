@@ -1,12 +1,14 @@
 -- Not A Profiler Lmao
 
+local gtm = getTimeMicros
+
 local maxsamples = 40
 
 local snaps = {}
 local avgs = {}
 local function resetsnap() snaps = {} end
 local function snap()
-	snaps[#snaps+1] = getTimeMicros()
+	snaps[#snaps+1] = gtm()
 end
 
 local function snapcalc()
@@ -52,3 +54,29 @@ rawset(_G, "PERFDRAW", function(v, unit, ...)
 end)
 
 -- local snaps,avgs,resetsnap,snap,snapcalc = SNAPS,AVGS,PERFDISPENSE()
+
+--[[
+/* example code
+
+local resetsnap,snap,snapcalc = PERFDISPENSE()
+
+local function f1(...)
+	--code
+end
+
+addHook("ThinkFrame", function()
+	resetsnap()
+	snap()
+	
+	f1()
+	
+	snap()
+	snapcalc()
+end)
+
+
+hud.add(function(v) PERFDRAW(v,nil,
+	"XD"
+)end)
+
+*/]]
