@@ -1,5 +1,52 @@
-// originally named Fuck LIB xdd
-/*
+-- originally named Fuck LIB xdd
+-- Using SLADE? Do Ctrl+Shift+[ to fold everything
+/* 
+
+--- Polar To Cartesian [cSpd / p2c]
+--- Format: p2c(angle_t ang, fixed_t rad, [mobj_t/table m])
+--- Returns: fixed_t x, fixed_t y
+--- Transforms the given polar coordinates into cartesian cordinates.
+--- Optionally takes a table/userdata with a scale parameter to scale the result.
+--- Note: No type checks are made, except for "not nil". Make sure all inputs are numbers!
+
+
+--- Polar To Cartesian 3D [cSpdEx / p2c3d]
+--- Format: p2c3d(angle_t hang, angle_t vang, fixed_t rad, [mobj_t/table m])
+--- Returns: fixed_t x, fixed_t y
+--- Also transforms the given polar coordinates into cartesian cordinates, but in 3D.
+--- Optionally takes a table/userdata with a scale parameter to scale the result.
+--- Note: No type checks are made, except for "not nil". Make sure all inputs are numbers!
+
+
+--- collision Z check
+--- Format: collZCheck(mobj_t m, mobj_t n)
+--- Returns: boolean collide?
+--- Returns whether the objects m and n intersect vertically (z position and height).
+--- For use in collision hooks, mainly.
+
+--- collision check
+--- Format: collCheck(int ms, int ml, int ns, int nl)
+--- Basically collZCheck but more universal.
+--- Given four values (m start, m length, n start, n length),
+--- Returns: boolean whether_they_intersect
+
+--- another one
+--- Format: collRadiusCheck(mobj_t m, mobj_t n)
+--- collZCheck but horizontal and done twice for each axis.
+--- Returns: boolean whether_they_intersect
+
+-- TODO
+
+--- validity check
+--- Format: function(mobj_t m, mobj_t n)
+--- Returns whether the given object is not nil and is valid.
+--- Returns: boolean valid?
+
+--- getDelta
+--- Format: function(fixed_t x1, fixed_t y1, fixed_t z1, fixed_t x2, fixed_t y2, fixed_t z2)
+--- Returns whether the given object is not nil and is valid.
+--- Returns: boolean valid?
+
 cSpd
 cSpdEx
 collZCheck
@@ -28,57 +75,72 @@ makeRange
 createFlags
 createEnum
 explodeString
+
+--- title
+--- Format: function()
+--- Returns:
+--- 
+
 */
 
-rawset(_G, "cSpd", function(ang, spd, m)
+-- Polar 2 Cartesian stuff
+
+rawset(_G, "p2c", function(ang, rad, m)
+	if hang == nil then error("hAng missing", 2) end
+	if rad == nil then error("rad missing", 2) end
 	if m == nil then m = {scale=FRACUNIT} end
-	spd = FixedMul(spd, m.scale)
-	return FixedMul( cos(ang), spd ), FixedMul( sin(ang), spd )
-	//returns x and y of calc
+	
+	rad = FixedMul(rad, m.scale)
+	return FixedMul( cos(ang), rad ), FixedMul( sin(ang), rad )
 end)
-rawset(_G, "cSpdEx", function(hang, vang, spd, m)
+
+rawset(_G, "p2c3d", function(hang, vang, rad, m)
 	if hang == nil then error("hAng missing", 2) end
 	if vang == nil then error("vAng missing", 2) end
-	if spd == nil then error("spd missing", 2) end
+	if rad == nil then error("rad missing", 2) end
 	if m == nil then m = {scale=FRACUNIT} end
-	spd = FixedMul(spd, m.scale)
-	local x = FixedMul( FixedMul( spd, cos(hang) ), cos(vang) )
-	local y = FixedMul( FixedMul( spd, sin(hang) ), cos(vang) )
-	local z = FixedMul( spd, sin(vang) )
-	return x,y,z
-	//returns x and y of calc
-end) // very "polar to cartesian"y
+	
+	rad = FixedMul(rad, m.scale)
+	return FixedMul( FixedMul( rad, cos(hang) ), cos(vang) ), -- x
+		   FixedMul( FixedMul( rad, sin(hang) ), cos(vang) ), -- y
+		   FixedMul( rad, sin(vang) ) -- z
+end)
+
+-- aka
+rawset(_G, "polar2cartesian", p2c)
+rawset(_G, "polar2cartesian3D", p2c3d)
+rawset(_G, "cSpd", p2c) -- legacy
+rawset(_G, "cSpdEx", p2c3d) -- legacy
+
+
+
+-- Collision checkers
 
 rawset(_G, "collZCheck", function(m, n)
 	return m.z < n.z+n.height and n.z < m.z+m.height
 end)
+
+rawset(_G, "collCheck", function(ms, ml, ns, nl)
+	return ms < ns+nl and ns < ms+ml
+end)
+
 rawset(_G, "collRadiusCheck", function(m, n)
 	return m.x-m.radius < n.x+n.radius and m.x+m.radius > n.x-n.radius
 	   and m.y-m.radius < n.y+n.radius and m.y+m.radius > n.y-n.radius
 end)
-rawset(_G, "collCheck", function(mz, mh, nz, nh)
-	return mz < nz+nh and mz+mh > nz
-end)
+
+
+
 
 rawset(_G, "isValid", function(mo)
 	return mo and mo.valid
 end)
 
-rawset(_G, "getDelta", function(x1,y1,z1,x2,y2,z2)
-	//print("PRONT",x1,y1,z1,x2,y2,z2,"END PRONT")
-	local r = R_PointToDist2(R_PointToDist2(x1, y1, x2, y2), z1, 0, z2)
-	return r
-end)
-rawset(_G, "getPackDelta", function(s1,s2)
-	// Assumes s1 and s2 are two sets of coords or have coords
-	local x1,y1,z1 = s1.x,s1.y,s1.z
-	if x1 == nil then x1,y1,z1 = s1[1],s1[2],s1[3] end
-	local x2,y2,z2 = s2.x,s2.y,s2.z
-	if x2 == nil then x2,y2,z2 = s2[1],s2[2],s2[3] end
-	return getDelta(x1,y1,z1,x2,y2,z2)
-end)
 
-rawset(_G, "vClamp", function(v, min, max) -- Clamps value to min and max
+
+-- Value manipulation stuff
+
+rawset(_G, "valClamp", function(v, min, max) -- Clamps value to min and max
 	if min > max then
 		min,max = max,min
 	end
@@ -87,7 +149,8 @@ rawset(_G, "vClamp", function(v, min, max) -- Clamps value to min and max
 	if v > max then v = max;hasClamp = true end
 	return v, hasClamp
 end)
-rawset(_G, "vWrap", function(n, min, max) -- Wrap value if it surpasses either bounds
+
+rawset(_G, "valWrap", function(n, min, max) -- Wrap value if it surpasses either bounds
 	if n == nil then error("#1 nil", 2) end
 	if min == nil then error("#2 nil", 2) end
 	if max == nil then error("#3 nil", 2) end
@@ -100,27 +163,27 @@ rawset(_G, "vWrap", function(n, min, max) -- Wrap value if it surpasses either b
 	return n
 end)
 
-rawset(_G, "vSplit", function(n, div) // Divides by this much and returns two values
+rawset(_G, "valSplit", function(n, div) -- Divides by this much and returns two values
 	local r = n/div
 	return r,n-r
 end)
 
-rawset(_G, "vClose", function(n, thr) // Returns 0 if below threshold
+rawset(_G, "valEpsilon", function(n, thr) -- Returns 0 if n is near zero ("near" defined by epsilon)
 	if abs(n) < thr then return 0 else return n end
 end)
 
-rawset(_G, "vDist", function(v, t) // Returns numerical distance between two values
-	return abs(v - t)
+rawset(_G, "valDist", function(v1, v2) -- Returns numerical distance between two values
+	return abs(v1, v2)
 end)
 
-rawset(_G, "vSign", function(n, rel) // Returns sign of value, or relative to another value
+rawset(_G, "valSign", function(n, rel) -- Returns sign of value (relative to zero or to argument #2)
 	rel = rel or 0
 	if n > rel then return 1
 	elseif n < rel then return -1
 	else return 0 end
 end)
 
-rawset(_G, "vApproach", function(n, target, step, overshoot) // Tries to reach target
+rawset(_G, "valApproach", function(n, target, step, overshoot) -- Attempts to move n towards step.
 	if step == 0 then return n end
 	local dist = vDist(n, target)
 	if step > 0 and abs(step) > dist and overshoot ~= true then step = dist end
@@ -130,7 +193,13 @@ rawset(_G, "vApproach", function(n, target, step, overshoot) // Tries to reach t
 	
 	return n + tstep
 end)
-rawset(_G, "pointInfo", function(o, m)
+
+
+
+-- ?
+-- TODO HERE
+
+local function IpointInfo(o, m) -- Returns horizontal distance, distance, horizontal angle and vertical angle from o to m.
 
 	if m == nil then error("mobj is nil", 2) end
 	
@@ -140,7 +209,8 @@ rawset(_G, "pointInfo", function(o, m)
 	local distT = R_PointToDist2(hdistT, o.z, 0, m.z)
 	
 	return hdistT,distT,hangT,vangT
-end)
+end
+rawset(_G, "pointInfo", IpointInfo)
 rawset(_G, "pointToDist3D", function(o, m)
 	if m == nil then error("mobj is nil", 2) end
 	
@@ -152,7 +222,7 @@ end)
 rawset(_G, "teleTowards", function(m, vx, vy, vz, fracmul)
 	if m == nil then error("mobj is nil", 2) end
 	
-	hdistT,distT,hangT,vangT = pointInfo(m, {x=vx,y=vy,z=vz})
+	hdistT,distT,hangT,vangT = IpointInfo(m, {x=vx,y=vy,z=vz})
 	
 	local rx,ry,rz = cSpdEx(hangT, vangT, FixedMul(distT, fracmul))
 	
@@ -160,9 +230,7 @@ rawset(_G, "teleTowards", function(m, vx, vy, vz, fracmul)
 	return rx,ry,rz
 end)
 
-rawset(_G, "getClosestSolidFlat", function(s, z, getceiling)
-	// Gets the closest (solid) flat relative to this Z
-	// Returns both the flat texture and the relevant sector/control sector
+rawset(_G, "getClosestSolidFlat", function(s, z, getceiling) -- Gets the closest (solid) flat relative to this Z
 	
 	local flats = {}
 	
@@ -171,9 +239,9 @@ rawset(_G, "getClosestSolidFlat", function(s, z, getceiling)
 	flats[1] = {s, z=cc, flat=(getceiling and s.ceilingpic or s.floorpic)}
 	
 	local goodflags = FF_EXISTS|FF_BLOCKPLAYER
-	// Rover must exist and at least block players for this
+	-- Rover must exist and at least block players for this
 	for rv in s.ffloors() do
-		if (rv.flags & goodflags) ~= goodflags then continue end // Not this one
+		if (rv.flags & goodflags) ~= goodflags then continue end -- Not this one
 		local cc = rv.topheight
 		if getceiling then cc = rv.bottomheight end
 		flats[#flats+1] = {rv.sector, z=cc, flat=(getceiling and rv.bottompic or rv.toppic)}
@@ -181,28 +249,28 @@ rawset(_G, "getClosestSolidFlat", function(s, z, getceiling)
 	
 	if not getceiling then
 		table.sort(flats, function(a,b) return a.z < b.z end)
-		if z < flats[1].z then return flats[1] end // Below everything, somehow? Give up immediately
+		if z < flats[1].z then return flats[1] end -- Below everything, somehow? Give up immediately
 		for i = 1,#flats-1 do
 			if flats[i].z <= z
 			and z < flats[i+1].z then
 				return flats[i]
 			end
 		end
-		return flats[#flats] // Above everything, somehow? Return topmost flat
+		return flats[#flats] -- Above everything, somehow? Return topmost flat
 	else
 		table.sort(flats, function(a,b) return a.z > b.z end)
-		if z > flats[1].z then return flats[1] end // Above everything, somehow? Give up immediately
+		if z > flats[1].z then return flats[1] end -- Above everything, somehow? Give up immediately
 		for i = 1,#flats-1 do
 			if flats[i].z >= z
 			and z > flats[i+1].z then
 				return flats[i]
 			end
 		end
-		return flats[#flats] // Below everything, somehow? Return bottommost flat
+		return flats[#flats] -- Below everything, somehow? Return bottommost flat
 	end
 end)
 
-rawset(_G, "findValueInTable", function(t, v) // Only returns the first instance
+rawset(_G, "findValueInTable", function(t, v) -- Only returns the first instance
 	for i = 1,#t do
 		if t[i] == v then return i end
 	end
@@ -320,4 +388,33 @@ rawset(_G, "ifNilUseNext", function(...)
 end)
 rawset(_G, "fetchFromG", function(what) -- for pcall
 	return _G[what]
+end)
+
+rawset(_G, "angleDiff", function(a, b, raw)
+	a,b = AngleFixed($1),AngleFixed($2)
+	
+	--print( ("CALL %4d %4d"):format(a/FRACUNIT,b/FRACUNIT) )
+	
+	-- difference between two angles
+	-- returns the difference, or "sum this to A to get to B"
+	
+	local diff = b - a
+	
+	
+	diff = $ + (180*FRACUNIT) -- % (360*FRACUNIT) - (180*FRACUNIT)
+	
+	while diff >= 360*FRACUNIT do diff = $ - 360*FRACUNIT end
+	while diff < 0 do diff = $ + 360*FRACUNIT end
+	
+	diff = $ - (180*FRACUNIT)
+	
+	/*
+	diff = $ + (180*FRACUNIT)
+	while diff >= 360*FRACUNIT do diff = $ - 360*FRACUNIT end
+	diff = $ - (180*FRACUNIT)
+	*/
+	
+	local r = diff
+	if not raw then r = FixedAngle(diff) end
+	return diff
 end)
