@@ -1,24 +1,12 @@
 do return end -- just in case
 -- won't stop Lua from trying to interpret the rest though ok
 
-
 -- ########################################## --
 -- Ultimate Draw String - Usage documentation --
 -- ########################################## --
 -- Previously known as FontShit.lua,
 -- but rewritten to be less annoying!
--- Updated to 0.0.1
-
-/* Mini cheatsheet for common glyphs:
-
-9 : TAB (usually empty)
-32 : Space (usually empty)
-48-57 : 0-9
-65-90 : A-Z
-97-122 : a-z
-
-Also see: http://www.asciitable.com
-*/
+-- Updated to 0.0.2
 
 -- The font lib prints somewhat helpful debug messages on console.
 -- Critical ones ("Now caching font X", "Font X failed to load", and such are critical, and always print.
@@ -31,96 +19,23 @@ Also see: http://www.asciitable.com
 -- If I'm talking about an integer WITHIN the fixed point scale,
 -- I will refer to it as "fixedpoint".
 
-
-
 -- ################################ --
--- FNT_Sentinel(drawer_t v)
-
-/* Not designed to be called directly...
-Performs patch caching functionality, storing glyph patches into tables for quicker access,
-as well as (some) additional font consistency checks.
-
-Can be called directly if you so desire, but it won't make any difference.
-(if anything, it will cause your code to be less performant)
-*/
-
--- Example:
-hud.add( function(v,p,c)
-	FNT_Sentinel(v) -- Calls upon thy Sentinel
-end, "game")
-
-
-
--- ################################ --
+-- Functions:
+-- FNT_Write(drawer_t v, table drawdata)
 -- FNT_NewFont(string name, table fontinfo)
-
-/* Creates a new font for future use.
-Must be called only once for a font, and before any attempts to draw with the font are made.
-
-name: Must be a string. The first five characters must be "FONT_".
-fontinfo: A table containing various parameters for the font.
-
-For proper colorization, make sure the font's glyphs are colored with the recolorable shade of green.
-
-*/
-
--- Available parameters for fontinfo:
-fontinfo = {
-	
-	prefix = string,
-	-- Signals the name format of each glyph of this font.
-	-- The usual format to name the glyphs in SLADE is "XXXXXYYY", where:
-	-- XXXXX is the prefix, and
-	-- YYY is the ascii representation of said glyph.
-	-- Thus, a pattern of "XXXXX%03d" can be formatted as "XXXXX000" thru "XXXXX255".
-	-- Make sure that:
-	-- - This parameter is a string.
-	-- - Numerical pattern is not missing.
-	-- - Formatted prefix does not exceed 8 characters when given a 3 character long number.
-	
-	monospacewidth = number,
-	-- Under monospace mode, the width that all glyphs will have.
-	-- Default: Average of every glyph's width, ruonded down.
-	
-	spacewidth = number,
-	-- The width of the space glyph (ascii 32).
-	-- Shortcut for doing forcedwidths[32].
-	-- Default: Space glyph's patch width.
-	--          If missing, monospacewidth/2
-	
-	height = number,
-	-- The height of all glyphs.
-	-- Default: Average of every glyph's height, rounded down.
-	
-	forcedwidths = table,
-	-- Table in the format {[ascii] = number}
-	-- While caching a particular glyph, the script checks if this table has the glyph's ascii number as a key.
-	-- If so, will interpret this number as the glyph's width instead of using the patch's width.	
-	
-	spritefont = boolean, -- /!\ CURRENTLY UNIMPLEMENTED /!\
-	-- No description lol
-	
-	charsep = number,
-	-- Extra horizontal separation between each drawn glyph.
-	-- Most useful when using flat color fonts whose dimensions make each glyph smush together.
-	-- Default: 0
-}
-
-
--- Example:
-FNT_NewFont("FONT_CONSOLE", {
-	prefix = "COLFN%03d",
-	monospacewidth = 8,
-	spacewidth = 4,
-})
-
+-- FNT_Sentinel(drawer_t v)
 
 
 -- ################################ --
 -- FNT_Write(drawer_t v, table drawdata)
 
 /* Draws a string. woah
+MAKE SURE to have used FNT_NewFont prior to drawing!
+You need at least ONE font!
+
+quick usage example:
 */
+FNT_Write(v, {x, y, font, text, flags, color})
 
 -- Available parameters for drawdata:
 
@@ -273,9 +188,6 @@ constants = {
 	
 }
 
-
-
-
 -- Example:
 
 -- Rainbow text
@@ -286,6 +198,101 @@ FNT_Write(v, {x=100*FRACUNIT, y=50*FRACUNIT, text="Rainbow text!", font=FONT_CON
 })
 
 
+
+
+
+-- ################################ --
+-- FNT_NewFont(string name, table fontinfo)
+
+/* Creates a new font for future use.
+Must be called only once for a font, and before any attempts to draw with the font are made.
+
+name: Must be a string. The first five characters must be "FONT_".
+fontinfo: A table containing various parameters for the font.
+
+For proper colorization, make sure the font's glyphs are colored with the recolorable shade of green.
+
+
+- Mini cheatsheet for common glyphs:
+
+9 : TAB (usually empty)
+32 : Space (usually empty)
+48-57 : 0-9
+65-90 : A-Z
+97-122 : a-z
+
+Also see: http://www.asciitable.com
+*/
+
+-- Available parameters for fontinfo:
+fontinfo = {
+	
+	prefix = string,
+	-- Signals the name format of each glyph of this font.
+	-- The usual format to name the glyphs in SLADE is "XXXXXYYY", where:
+	-- XXXXX is the prefix, and
+	-- YYY is the ascii representation of said glyph.
+	-- Thus, a pattern of "XXXXX%03d" can be formatted as "XXXXX000" thru "XXXXX255".
+	-- Make sure that:
+	-- - This parameter is a string.
+	-- - Numerical pattern is not missing.
+	-- - Formatted prefix does not exceed 8 characters when given a 3 character long number.
+	
+	monospacewidth = number,
+	-- Under monospace mode, the width that all glyphs will have.
+	-- Default: Average of every glyph's width, ruonded down.
+	
+	spacewidth = number,
+	-- The width of the space glyph (ascii 32).
+	-- Shortcut for doing forcedwidths[32].
+	-- Default: Space glyph's patch width.
+	--          If missing, monospacewidth/2
+	
+	height = number,
+	-- The height of all glyphs.
+	-- Default: Average of every glyph's height, rounded down.
+	
+	forcedwidths = table,
+	-- Table in the format {[ascii] = number}
+	-- While caching a particular glyph, the script checks if this table has the glyph's ascii number as a key.
+	-- If so, will interpret this number as the glyph's width instead of using the patch's width.	
+	
+	spritefont = boolean, -- /!\ CURRENTLY UNIMPLEMENTED /!\
+	-- No description lol
+	
+	charsep = number,
+	-- Extra horizontal separation between each drawn glyph.
+	-- Most useful when using flat color fonts whose dimensions make each glyph smush together.
+	-- Default: 0
+}
+
+
+-- Example:
+FNT_NewFont("FONT_CONSOLE", {
+	prefix = "COLFN%03d",
+	monospacewidth = 8,
+	spacewidth = 4,
+})
+
+
+
+
+
+-- ################################ --
+-- FNT_Sentinel(drawer_t v)
+
+/* Not designed to be called directly...
+Performs patch caching functionality, storing glyph patches into tables for quicker access,
+as well as (some) additional font consistency checks.
+
+Can be called directly if you so desire, but it won't make any difference.
+(if anything, it will cause your code to be less performant)
+*/
+
+-- Example:
+hud.add( function(v,p,c)
+	FNT_Sentinel(v) -- Calls upon thy Sentinel
+end, "game")
 
 
 

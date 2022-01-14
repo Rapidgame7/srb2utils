@@ -8,7 +8,7 @@ local function fontpront(s, crit)
 	end
 end
 
-local major,minor,release = 0,0,1
+local major,minor,release = 0,0,2
 local verstr = ("%d.%d.%03d"):format(major, minor, release)
 fontpront("Preparing UDS "..verstr)
 
@@ -329,6 +329,7 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 	if data.x == nil then error("X parameter missing",2) end
 	if data.y == nil then error("Y parameter missing",2) end
 	if data.font == nil then error("FONT parameter missing",2) end
+	if data.text == nil then error("TEXT parameter missing",2) end
 	
 	data.wflags = ifNilUseNext($, 0)
 	data.flags = ifNilUseNext($, 0)
@@ -380,7 +381,7 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 	local widthSinceWhitespace = 0 -- width since last whitespace/SOL, for... cause i'm lazy
 	
 	for i = 1,#data.text do
-		if line > 128 then error("LINE PANIC (>128) - Is maxwidth too low?",2) end
+		if line > 512 then error("LINE PANIC (>512) - Is maxwidth too low?",2) end
 		local thisline = todrawlines[line]
 		
 		local chr = data.text:sub(i,i):byte()
@@ -390,17 +391,21 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 		else -- a glyph!
 			local whitespace = whitespaces[chr]
 			if whitespace then
-				lastWhitespace = #thisline
+				lastWhitespace = #thisline+1
 			end
 			
 			local glyph = font.glyphs[chr]
 			local w = glyph.width
 			
 			if doWrap then
+				local doWordWrap = doWordWrap
+				if widthSoFar == widthSinceWhitespace then
+					-- This width is from the start of the line???
+					-- Don't break-by-word, bad idea.
+					doWordWrap = false
+				end
 				if widthSoFar+w > maxwidth then
 					-- this exceeds maxwidth
-					
-					lastWhitespace = 0 -- since all three cases did this on draft, i'm doing it here
 					
 					if whitespace then
 						-- if whitespace is the one crossing the limit,
@@ -410,24 +415,31 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 						continue
 					elseif doWordWrap then
 						-- this glyph, plus all previous up to whitespace/SOL, go into the next line
-						local newline = todrawlines[line+1]
-						for j = lastWhitespace+1,i do -- all glyphs between then+1 and now
+						local prevline = thisline
+						line = $+1
+						thisline = todrawlines[line]
+						
+						for j = lastWhitespace+1,#prevline do -- all glyphs between then+1 and now
 							-- put glyph into new line, invalidate it from previous line
-							newline[#newline+1],line[j] = line[j],nil
+							--prevline[#prevline+1],thisline[j] = thisline[j],nil
+							thisline[#thisline+1],prevline[j] = prevline[j],nil
 						end
-						widthSoFar = widthSinceWhitespace -- the width of these glyphs, so we don't calc them later
+						widthSoFar = widthSinceWhitespace -- the width of these glyphs, so we don't miscalc them later
 					else
-						-- this glyph goes into the next line
+						-- this glyph goes into the next line, straight up
 						line = $+1
 						thisline = todrawlines[line]
 						widthSoFar,widthSinceWhitespace = 0,0,0
 					end
+					
+					lastWhitespace = 0 -- since all three cases did this on draft, i'm doing it here
 					
 				end
 			end
 			
 			thisline[#thisline+1] = glyph
 			widthSoFar,widthSinceWhitespace = $1+w,$2+w
+			if whitespace then widthSinceWhitespace = 0 end
 		end
 	end
 	
@@ -437,30 +449,28 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 	-- and for each line too
 	for lineix = 1,#todrawlines do
 		local line = todrawlines[lineix]
+		
+		-- calculate line width
+		local ew = 0 -- effective width
 		for i = 1,#line do
-		
-			-- calculate line width
-			local ew = 0 -- effective width
-			for i = 1,#line do
-				ew = $ + line[i].width
-			end
-			ew = FixedMul($*FRACUNIT, data.hscale)
-			
-			-- and height
-			-- ...we can do this outside the loop!
-			--local eh = FixedMul(#todrawlines*FRACUNIT, lineheight) -- effective height
-			local eh = FixedMul(font.height*FRACUNIT, data.vscale)
-			-- ...well, uh. yeah. lmao
-			
-			
-			line.ewidth = ew
-			line.eheight = eh
-			
-			-- TODO: Include char sep
-			tew = max($, ew)
-			--teh = $+eh
-		
+			ew = $ + line[i].width
 		end
+		ew = FixedMul($*FRACUNIT, data.hscale)
+		
+		-- and height
+		-- ...we can do this outside the loop!
+		--local eh = FixedMul(#todrawlines*FRACUNIT, lineheight) -- effective height
+		local eh = FixedMul(font.height*FRACUNIT, data.vscale)
+		-- ...well, uh. yeah. lmao
+		
+		
+		line.ewidth = ew
+		line.eheight = eh
+		
+		-- TODO: Include char sep
+		tew = max($, ew)
+		--teh = $+eh
+		
 	end
 	teh = FixedMul(#todrawlines*FRACUNIT, lineheight)
 	
@@ -490,7 +500,8 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 		-- take care box into account
 		cx = -FixedDiv(FixedMul(line.ewidth, ha), FRACUNIT)
 		--cy = -FixedDiv(FixedMul(line.eheight, va), FRACUNIT) + (lineix-1)*font.height -- same but in vertical
-		cy = -FixedDiv(FixedMul(line.eheight, va), FRACUNIT) + lineheight*(lineix-1)
+		cy = -FixedDiv(FixedMul(teh, va), FRACUNIT) + lineheight*(lineix-1)
+		--cy = -teh + lineheight*(lineix-1)
 		
 		for thisix = 1,#line do
 			data.curchartotal = $+1
