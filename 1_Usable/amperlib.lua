@@ -86,7 +86,7 @@ explodeString
 -- Polar 2 Cartesian stuff
 
 rawset(_G, "p2c", function(ang, rad, m)
-	if hang == nil then error("hAng missing", 2) end
+	if ang == nil then error("ang missing", 2) end
 	if rad == nil then error("rad missing", 2) end
 	if m == nil then m = {scale=FRACUNIT} end
 	
