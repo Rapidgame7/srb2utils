@@ -25,7 +25,6 @@ local mmhj = setmetatable({}, {
 		else
 			error("String/Userdata key expected, got "..type(k),2)
 		end
-		userdataType(players)
 		
 		-- First, is the userdata metatable valid?
 		if um then
