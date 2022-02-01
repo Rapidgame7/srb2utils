@@ -2,7 +2,7 @@
 
 local gtm = getTimeMicros
 
-local maxsamples = TICRATE*4
+local maxsamples = TICRATE*10
 
 local snaps = {}
 local avgs = {}
@@ -59,27 +59,3 @@ rawset(_G, "PERFDRAW", function(v, unit, ...)
 end)
 
 -- local snaps,avgs,resetsnap,snap,snapcalc = SNAPS,AVGS,PERFDISPENSE()
-
---[[
-/* example code
-local resetsnap,snap,snapcalc = PERFDISPENSE()
-
-local function f1(...)
-	--code
-end
-
-addHook("ThinkFrame", function()
-	resetsnap()
-	snap()
-	
-	f1()
-	
-	snap()
-	snapcalc()
-end)
-
-hud.add(function(v) PERFDRAW(v,nil,
-	"XD"
-)end)
-
-*/]]
