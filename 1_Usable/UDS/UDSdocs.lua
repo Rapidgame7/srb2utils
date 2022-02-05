@@ -8,10 +8,9 @@ do return end -- just in case
 -- but rewritten to be less annoying!
 -- Updated to 0.0.2
 
--- The font lib prints somewhat helpful debug messages on console.
+-- This font lib prints somewhat helpful debug messages on console.
 -- Critical ones ("Now caching font X", "Font X failed to load", and such are critical, and always print.
 -- Others are strictly verbose ("Assuming height is X" and others), which require the game to be in debug mode (-debug).
-
 
 -- Before reading, note the following distinctions:
 -- When I'm talking about a number, an integer outside the fixed point scale,
@@ -95,7 +94,7 @@ drawdata = {
 	vscale = fixedpoint,
 	-- Same, but for separate axes.
 	
-	maxwidth = int,
+	maxwidth = number,
 	-- If a line exceeds this length,
 	-- the remainder of the line will be shifted to the next line.
 	-- Does not respect words, but a wflag can make the script attempt this.
