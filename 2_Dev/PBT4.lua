@@ -35,6 +35,10 @@ local thosbutons = {
 	{"custom3", function(cmd) return (cmd.buttons & BT_CUSTOM3) > 0 end},
 	
 	-- pbt specific
+	{"hmoving", function(_,bt) return bt.left   >0 or bt.right  >0 end},
+	{"vmoving", function(_,bt) return bt.up     >0 or bt.down   >0 end},
+	{ "moving", function(_,bt) return bt.hmoving>0 or bt.vmoving>0 end},
+	
 	/*
 		p.bt.hmoving = (p.bt.left or p.bt.right) and $~=nil and $+1 or 0
 		p.bt.vmoving = (p.bt.up or p.bt.down) and $~=nil and $+1 or 0
@@ -86,7 +90,7 @@ rawset(_G, "pbtxDaemon", function(p)
 			
 			p.btprev[name] = p.bt[name]
 			
-			local r = f(cmd)
+			local r = f(cmd,p.bt,p)
 			p.bt[name]    =     r and $+1 or 0
 			p.btrel[name] = not r and $+1 or 0
 		end
