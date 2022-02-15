@@ -86,8 +86,22 @@ rawset(_G, "valSplit", function(n, div) -- Divides by this much and returns two 
 	return r,n-r
 end)
 
-rawset(_G, "valEpsilon", function(n, thr) -- Returns 0 if n is near zero ("near" defined by epsilon)
-	if abs(n) < thr then return 0 else return n end
+/*
+rawset(_G, "valEpsilon", function(n, near) -- Returns 0 if n is near zero ("near" defined by epsilon)
+	if abs(n) < near then return 0 else return n end
+end)
+*/
+--n, target, epsilon
+rawset(_G, "valEpsilon", function(n, ...) -- Returns n if n is near target ("near" defined by epsilon)
+	local target,epsilon = 0,0
+	if select('#', ...) == 0 then error("No args",2) end
+	if select('#', ...) == 1 then
+		epsilon = ...
+	else
+		target,epsilon = ...
+	end
+	local min,max = target-epsilon,target+epsilon
+	if n < max and n > min then return target else return n end
 end)
 
 rawset(_G, "valDist", function(v1, v2) -- Returns numerical distance between two values
@@ -325,4 +339,36 @@ rawset(_G, "angleDiff", function(a, b, raw)
 	
 	if not raw then diff = FixedAngle(diff) end
 	return diff
+end)
+
+rawset(_G, "P_ClosestPointOnLineBound", function(x, y, line)
+	-- local px,py = P_ClosestPointOnLine(m.x, m.y, fline)
+	
+	local px,py = P_ClosestPointOnLine(x, y, line)
+	local v1,v2 = line.v1,line.v2
+	
+	px = valClamp($, v1.x, v2.x)
+	py = valClamp($, v1.y, v2.y)
+	
+	return px,py
+end)
+
+rawset(_G, "rotatePoint", function(px, py, angle, cx, cy)
+	-- x y are the coords to rotate
+	-- cx and cy are the points to rotate around of, if available
+	local s,c = sin(angle),cos(angle)
+	
+	cx = $ or 0
+	cy = $ or 0
+	
+	px = $-cx
+	py = $-cy
+	
+	local xnew = FixedMul(px, c) - FixedMul(py, s)
+	local ynew = FixedMul(px, s) + FixedMul(py, c)
+	
+	px = xnew + cx
+	py = ynew + cy
+	
+	return px,py
 end)
