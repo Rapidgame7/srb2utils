@@ -74,6 +74,8 @@ createFlags{
 	"WF_NOLINEFEED", -- Do not process line feed characters (\0xA, dec 10, \n) as such.
 	
 	"WF_WORDWRAP", -- Makes the line wrapper attempt to break lines between words rather than within words.
+	
+	"WF_MONOSPACE", -- Pretends all glyphs are of the same width
 }
 
 local fonts = {}
@@ -264,6 +266,9 @@ for _ix = 1,#fonts do
 			fontpront("...so I take the average of all glyphs ("..(f.monospacewidth)..").")
 		end
 		
+		-- missing recalc
+		if f.missingwidth == nil then f.missingwidth = f.monospacewidth end
+		
 		-- space
 		if not gs[32].exists then
 			fontpront("\130*\128 There is no space glyph...")
@@ -275,6 +280,15 @@ for _ix = 1,#fonts do
 				f.forcedwidths[32] = v
 				gs[32].width = v
 				fontpront("...so I pretend its width is half monospace's width ("..(v)..").")
+			end
+		end
+		
+		-- recalculate missing glyph widths
+		local recalc = false
+		for ascii = 0,255 do
+			local g = gs[ascii]
+			if not g.exists then
+				g.width = f.missingwidth
 			end
 		end
 		
@@ -338,9 +352,30 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 	if data.halign == nil then data.halign = HALIGN_LEFT end
 	if data.valign == nil then data.valign = VALIGN_TOP end
 	
+	-- ensure validity
+	data.text = tostring($)
+	
+	/*
 	data.hscale = ifNilUseNext($, data.scale, FRACUNIT)
 	data.vscale = ifNilUseNext($, data.scale, FRACUNIT)
 	
+	if data.xscale ~= nil then
+		local extra = data.xscale
+		data.hscale = FixedMul($, extra)
+		data.vscale = FixedMul($, extra)
+	end
+	*/
+	
+	data.hscale = ifNilUseNext($, FRACUNIT)
+	data.vscale = ifNilUseNext($, FRACUNIT)
+	
+	if data.scale ~= nil then
+		local sc = data.scale
+		data.hscale = FixedMul($, sc)
+		data.vscale = FixedMul($, sc)
+	end
+	
+	-- other
 	data.xoff = ifNilUseNext($, 0)
 	data.yoff = ifNilUseNext($, 0)
 	
@@ -352,6 +387,8 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 	-- TODO: Make maxwidth more precise
 	-- (Might require refactoring glyph width processing)
 	if maxwidth < 0 then error("Something has gone wrong.",2) end
+	
+	local monospaceMode = data.wflags & WF_MONOSPACE > 0
 	
 	data.mem = {}
 	
@@ -396,6 +433,7 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 			
 			local glyph = font.glyphs[chr]
 			local w = glyph.width
+			if monospaceMode then w = font.monospacewidth end
 			
 			if doWrap then
 				local doWordWrap = doWordWrap
@@ -453,7 +491,9 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 		-- calculate line width
 		local ew = 0 -- effective width
 		for i = 1,#line do
-			ew = $ + line[i].width
+			local w = line[i].width
+			if monospaceMode then w = font.monospacewidth end
+			ew = $ + w
 		end
 		ew = FixedMul($*FRACUNIT, data.hscale)
 		
@@ -543,7 +583,9 @@ rawset(_G, "FNT_Write", function(v, data, doerror)
 			local morex = this.width
 			local forcew = font.forcedwidths[ascii]
 			-- if monospace then forcew = monospacewidth end
-			if forcew ~= nil then morex = forcew end
+			if monospaceMode then morex = font.monospacewidth
+			elseif forcew ~= nil then morex = forcew end
+			
 			
 			morex = $+charsep
 			
