@@ -322,7 +322,7 @@ rawset(_G, "fetchFromG", function(what) -- for pcall
 	return _G[what]
 end)
 
-rawset(_G, "angleDiff", function(a, b, raw)
+rawset(_G, "angleDiff", function(a, b, raw) -- if raw true (default), remains as angle
 	a,b = AngleFixed($1),AngleFixed($2)
 	
 	-- difference between two angles
